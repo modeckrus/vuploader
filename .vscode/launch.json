@@ -14,7 +14,7 @@
                 "-p",
                 "/home/modeck/dev/flutter/mf_mobile_flutter",
                 "-e",
-                "test_send"
+                "just_upload"
             ]
         }
     ]

@@ -68,34 +68,30 @@ func (t *TelegramUploader) ChatIdGetter() error {
 	}
 	return nil
 }
-func (t *TelegramUploader) SendMessage(message string) error {
+func (t *TelegramUploader) SendMessage(message string) (*tgbotapi.Message, error) {
 	msg := tgbotapi.NewMessage(t.ChatId, message)
 	msg.ParseMode = tgbotapi.ModeHTML
 	sended, err := t.Bot.Send(msg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	t.printMessage(sended)
-	return nil
+	return &sended, nil
 }
 func (t *TelegramUploader) UploadFiles(filePathes []string, message string) error {
-	files := []interface{}{}
-	l := len(filePathes)
-	for index, path := range filePathes {
-		file := tgbotapi.NewInputMediaDocument(tgbotapi.FilePath(path))
-		if l == index+1 {
-			message = tgbotapi.EscapeText(tgbotapi.ModeMarkdown, message)
-			file.ParseMode = tgbotapi.ModeHTML
-			file.Caption = message
-		}
-		files = append(files, file)
-	}
-	fileMessage := tgbotapi.NewMediaGroup(t.ChatId, files)
-	sended, err := t.Bot.Send(fileMessage)
+	telegramUploaded, err := t.SendMessage(message)
 	if err != nil {
 		return err
 	}
-	t.printMessage(sended)
+	for _, path := range filePathes {
+		file := tgbotapi.NewInputMediaDocument(tgbotapi.FilePath(path))
+		files := []interface{}{file}
+		fileMessage := tgbotapi.NewMediaGroup(t.ChatId, files)
+		fileMessage.ReplyToMessageID = telegramUploaded.MessageID
+		sended, _ := t.Bot.Send(fileMessage)
+		t.printMessage(sended)
+
+	}
 	return nil
 }
 

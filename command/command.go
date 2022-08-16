@@ -111,7 +111,8 @@ func (t Commander) TestSend() error {
 		message += "\n"
 	}
 	message += t.ChangeLog.LastVersion()
-	return t.Uploader.SendMessage(message)
+	_, err := t.Uploader.SendMessage(message)
+	return err
 }
 func (t Commander) TestRename() error {
 	tasker := NewTasker(t.Path)
