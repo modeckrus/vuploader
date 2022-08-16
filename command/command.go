@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -61,9 +62,46 @@ func (t Commander) ParseCommand(command string) error {
 		err = t.TestSend()
 	case "get_chat_id":
 		err = t.GetChatID()
+	case "just_upload":
+		err = t.JustUpload()
 	}
 	return err
 }
+func (t Commander) JustUpload() error {
+	tasker := NewTasker(t.Path)
+	err := tasker.cd("./build/app/outputs/flutter-apk/")
+	if err != nil {
+		return err
+	}
+	pathes, err := tasker.getFiles()
+	if err != nil {
+		return err
+	}
+	resultPathes := []string{}
+	for i := 0; i < len(pathes); i++ {
+		path := pathes[i]
+		if strings.Contains(path, "prod_") {
+			resultPathes = append(resultPathes, path)
+		}
+		if strings.Contains(path, "dev_") {
+			resultPathes = append(resultPathes, path)
+		}
+		if strings.Contains(path, "stg_") {
+			resultPathes = append(resultPathes, path)
+		}
+	}
+	message := t.Message
+
+	if t.NeedChangeLog {
+		if message != "" {
+			message += "\n"
+		}
+		message += t.ChangeLog.LastVersion()
+	}
+	err = t.Uploader.UploadFiles(resultPathes, message)
+	return err
+}
+
 func (t Commander) GetChatID() error {
 	return t.Uploader.ChatIdGetter()
 }
@@ -155,7 +193,7 @@ func (t Commander) UploadAll() error {
 		return err
 	}
 	pathes = append(pathes, path)
-	path, err = t.DevAndroid()
+	path, err = t.StgAndroid()
 	if err != nil {
 		return err
 	}
@@ -278,6 +316,20 @@ func NewTasker(path string) *Tasker {
 	return &Tasker{
 		Dir: path,
 	}
+}
+func (t *Tasker) getFiles() ([]string, error) {
+	files, err := ioutil.ReadDir(t.Dir)
+	if err != nil {
+		return nil, err
+	}
+	pathes := make([]string, 0)
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		pathes = append(pathes, filepath.Join(t.Dir, file.Name()))
+	}
+	return pathes, nil
 }
 func (t *Tasker) cd(path string) error {
 	path = filepath.Join(t.Dir, path)
