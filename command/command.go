@@ -213,7 +213,7 @@ func (t Commander) UploadAll() error {
 }
 func (t Commander) ProdAndroid() (string, error) {
 	tasker := NewTasker(t.Path)
-	err := tasker.runCommandWithOutput("flutter build apk --dart-define=flavor=production --flavor=production --release -v")
+	err := tasker.runCommandWithOutput("flutter build apk --target lib/main_production.dart --flavor=production --release -v")
 	if err != nil {
 		return "", err
 	}
@@ -228,7 +228,7 @@ func (t Commander) ProdAndroid() (string, error) {
 }
 func (t Commander) DevAndroid() (string, error) {
 	tasker := NewTasker(t.Path)
-	err := tasker.runCommandWithOutput("flutter build apk --dart-define=flavor=development --flavor=development --release -v")
+	err := tasker.runCommandWithOutput("flutter build apk --target lib/main_development.dart --flavor=development --release -v")
 	if err != nil {
 		return "", err
 	}
@@ -244,7 +244,7 @@ func (t Commander) DevAndroid() (string, error) {
 func (t Commander) StgAndroid() (string, error) {
 	tasker := NewTasker(t.Path)
 
-	err := tasker.runCommandWithOutput("flutter build apk --dart-define=flavor=staging --flavor=staging --release -v")
+	err := tasker.runCommandWithOutput("flutter build apk --target lib/main_staging.dart --flavor=staging --release -v")
 	if err != nil {
 		return "", err
 	}
