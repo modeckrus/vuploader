@@ -19,6 +19,9 @@ type ChangeLog []Change
 // 123 -> 123
 func littleVersion(v string) int64 {
 	i, err := strconv.ParseInt(v, 10, 64)
+	if i == 300 {
+		fmt.Println(i)
+	}
 	if err != nil {
 		return 0
 	}
@@ -26,30 +29,34 @@ func littleVersion(v string) int64 {
 		return i * 100
 	}
 	if len(v) == 2 {
-		return i * 10
+		return i * 100
+	}
+	if len(v) == 3 {
+		return i * 100
 	}
 	return i
 }
 
-func ParseVersion(v string) int64 {
+// 1.2.3+456 -> 001002003456
+// 1.2.30+456 -> 001002030456
+// 1.2.300+456 -> 001002300456
+// 1.20.3+456 -> 001020003456
+// 1.20.30+456 -> 001020030456
+// 1.20.300+456 -> 001020300456
+// 1.200.3+456 -> 001200003456
+// 1.200.30+456 -> 001200030456
+func Parse(version string) int64 {
 	result := int64(0)
-	buildSplitted := strings.Split(string(v), "+")
-	v = buildSplitted[0]
+	buildSplitted := strings.Split(string(version), "+")
+	version = buildSplitted[0]
 	buildVersionStr := buildSplitted[1]
 
-	splitted := strings.Split(string(v), ".")
-	for index, item := range splitted {
-		index = (2 - index)
-		multiplier := int64(math.Pow(1000, float64(index)))
-		multiplier *= 1000
-		key := littleVersion(item)
-		result += key * multiplier
+	v := strings.Split(string(version), ".")
+	if len(v) != 3 {
+		return 0
 	}
-	buildVersion, err := strconv.ParseInt(buildVersionStr, 10, 64)
-	if err != nil {
-		return result
-	}
-	result += buildVersion
+	buildVersionInt, _ := strconv.ParseInt(buildVersionStr, 10, 64)
+	result = littleVersion(v[0])*10000000 + littleVersion(v[1])*10000 + littleVersion(v[2])*10 + buildVersionInt
 	return result
 }
 
@@ -80,6 +87,28 @@ func (a SortByVersion) Len() int      { return len(a) }
 func (a SortByVersion) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a SortByVersion) Less(i, j int) bool {
 	return ParseVersion(a[i].Version) < ParseVersion(a[j].Version)
+}
+func ParseVersion(v string) int64 {
+	result := int64(0)
+	buildSplitted := strings.Split(string(v), "+")
+	v = buildSplitted[0]
+	buildVersionStr := buildSplitted[1]
+
+	splitted := strings.Split(string(v), ".")
+	for i, item := range splitted {
+		var index = (2 - i)
+		multiplier := int64(math.Pow(1000, float64(index)))
+		// multiplier *= 1000
+		key := littleVersion(item)
+		// key, _ := strconv.ParseInt(item, 10, 64)
+		result += key * multiplier
+	}
+	buildVersion, err := strconv.ParseInt(buildVersionStr, 10, 64)
+	if err != nil {
+		return result
+	}
+	result += buildVersion
+	return result
 }
 
 func NewChangelog(path string) (ChangeLog, error) {
